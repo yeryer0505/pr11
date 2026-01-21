@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Products</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="container">
+    <h1>Product List</h1>
+
+    <form id="filterForm">
+      <input type="text" id="category" placeholder="Category (e.g. Food, Clothes)" />
+
+      <input type="number" id="minPrice" placeholder="Min price" />
+
+      <select id="sort">
+        <option value="">No sorting</option>
+        <option value="price">Sort by price</option>
+      </select>
+
+      <input type="text" id="fields" placeholder="Fields (name,price)" />
+
+      <button type="submit">Load Products</button>
+    </form>
+
+    <div id="products"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("filterForm");
+    const productsDiv = document.getElementById("products");
+
+    async function loadProducts(queryString = "") {
+      const response = await fetch(`/api/products${queryString}`);
+      let products = await response.json();
+
+      products = products.slice(0, 10);
+
+      productsDiv.innerHTML = "";
+
+      products.forEach(product => {
+        const div = document.createElement("div");
+        div.className = "product";
+
+        div.innerHTML = `
+          <p><strong>Name:</strong> ${product.name || "-"}</p>
+          <p><strong>Category:</strong> ${product.category || "-"}</p>
+          <p><strong>Price:</strong> ${product.price || "-"}</p>
+        `;
+
+        productsDiv.appendChild(div);
+      });
+    }
+
+    loadProducts();
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const category = document.getElementById("category").value;
+      const minPrice = document.getElementById("minPrice").value;
+      const sort = document.getElementById("sort").value;
+      const fields = document.getElementById("fields").value;
+
+      let query = [];
+
+      if (category) query.push(`category=${category}`);
+      if (minPrice) query.push(`minPrice=${minPrice}`);
+      if (sort) query.push(`sort=${sort}`);
+      if (fields) query.push(`fields=${fields}`);
+
+      const queryString = query.length ? `?${query.join("&")}` : "";
+
+      loadProducts(queryString);
+    });
+  </script>
+
+</body>
+</html>
+
+<!-- /api/products
+/api/products?category=Food
+/api/products?minPrice=10
+/api/products?sort=price
+/api/products?fields=name,price
+/api/products?category=Books&minPrice=5&sort=price&fields=name,price -->
