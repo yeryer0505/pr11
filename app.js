@@ -7,9 +7,6 @@ const API_KEY = process.env.API_KEY;
 
 function requireApiKey(req, res, next) {
   try {
-    if (!API_KEY) {
-      return res.status(500).json({ error: "Server misconfigured" });
-    }
 
     const key = req.header("x-api-key");
 
