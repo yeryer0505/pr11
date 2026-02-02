@@ -3,6 +3,30 @@ const { MongoClient, ObjectId } = require("mongodb");
 const path = require("path");
 require("dotenv").config();
 
+const API_KEY = process.env.API_KEY;
+
+function requireApiKey(req, res, next) {
+  try {
+    if (!API_KEY) {
+      return res.status(500).json({ error: "Server misconfigured" });
+    }
+
+    const key = req.header("x-api-key");
+
+    if (!key) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    if (key !== API_KEY) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    return next();
+  } catch (e) {
+    return res.status(500).json({ error: "Server error" });
+  }
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -224,7 +248,7 @@ app.get("/api/items/:id", async (req, res) => {
   }
 });
 
-app.post("/api/items", async (req, res) => {
+app.post("/api/items", requireApiKey, async (req, res) => {
   try {
     if (!ensureDb(itemsCollection, res)) return;
 
@@ -251,7 +275,8 @@ app.post("/api/items", async (req, res) => {
   }
 });
 
-app.put("/api/items/:id", async (req, res) => {
+
+app.put("/api/items/:id", requireApiKey, async (req, res) => {
   try {
     if (!ensureDb(itemsCollection, res)) return;
 
@@ -284,7 +309,7 @@ app.put("/api/items/:id", async (req, res) => {
   }
 });
 
-app.patch("/api/items/:id", async (req, res) => {
+app.patch("/api/items/:id", requireApiKey, async (req, res) => {
   try {
     if (!ensureDb(itemsCollection, res)) return;
 
@@ -315,7 +340,7 @@ app.patch("/api/items/:id", async (req, res) => {
   }
 });
 
-app.delete("/api/items/:id", async (req, res) => {
+app.delete("/api/items/:id", requireApiKey, async (req, res) => {
   try {
     if (!ensureDb(itemsCollection, res)) return;
 
@@ -326,12 +351,13 @@ app.delete("/api/items/:id", async (req, res) => {
     if (result.deletedCount === 0)
       return res.status(404).json({ error: "Not found" });
 
-    res.status(204).send();
+    res.status(200).json({ ok: true, deletedId: req.params.id });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 app.get("/version", (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
